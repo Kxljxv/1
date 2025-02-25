@@ -1,1 +1,1 @@
-![Interaktive Wahlergebnisse Karte](index.html)
+![Interaktive Wahlergebnisse Karte](karte.html)
