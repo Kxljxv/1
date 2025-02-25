@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wahlergebnisse Karte</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        #map { width: 100%; height: 500px; }
+        #slider { position: absolute; top: 10px; left: 10px; z-index: 1000; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <input type="range" id="slider" min="0" max="5" step="1" value="0">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        var map = L.map('map').setView([52.52, 13.40], 12); // Berlin als Zentrum
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        var geojsonLayers = [];
+        var slider = document.getElementById('slider');
+
+        // GeoJSON-Dateien für jede Partei laden
+        var parties = ['SPD', 'CDU', 'Grüne', 'LINKE', 'AfD'];
+        parties.forEach(function(party, index) {
+            fetch('https://deinbenutzername.github.io/wahlergebnisse-karte/' + party + '.geojson')
+                .then(response => response.json())
+                .then(data => {
+                    var layer = L.geoJSON(data, {
+                        style: function(feature) {
+                            return {
+                                fillColor: getColor(feature.properties[party]),
+                                weight: 1,
+                                opacity: 1,
+                                color: 'white',
+                                dashArray: '3',
+                                fillOpacity: 0.7
+                            };
+                        }
+                    }).addTo(map);
+                    geojsonLayers.push(layer);
+                    if (index === parties.length - 1) {
+                        updateMap();
+                    }
+                });
+        });
+
+        function getColor(value) {
+            return value > 0.5 ? '#800026' :
+                   value > 0.4 ? '#BD0026' :
+                   value > 0.3 ? '#E31A1C' :
+                   value > 0.2 ? '#FC4E2A' :
+                   value > 0.1 ? '#FD8D3C' :
+                   value > 0.05 ? '#FEB24C' :
+                   value > 0.02 ? '#FED976' :
+                                  '#FFEDA0';
+        }
+
+        function updateMap() {
+            geojsonLayers.forEach(function(layer, index) {
+                if (index === slider.value) {
+                    layer.addTo(map);
+                } else {
+                    map.removeLayer(layer);
+                }
+            });
+        }
+
+        slider.addEventListener('input', function() {
+            updateMap();
+        });
+    </script>
+</body>
+</html>
